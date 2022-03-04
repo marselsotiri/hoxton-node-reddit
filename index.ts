@@ -34,6 +34,10 @@ const getUserById = db.prepare(`
 SELECT * FROM users WHERE id=?;
 `)
 
+const getPostById = db.prepare(`
+SELECT * FROM posts WHERE id=?;
+`)
+
 
 app.post('/sign-in', (req, res) => {
   const { email, password } = req.body;
@@ -68,6 +72,29 @@ app.post('/users', (req, res) => {
 
       const newUser = getUserById.run(result.lastInsertRowid)
       res.send(newUser)
+  }
+  else {
+      res.status(400).send({ error: errors })
+  }
+})
+
+app.post('/posts', (req, res) => {
+  const { content, title, createdAt, userId, subredditId } = req.body
+
+  let errors = []
+
+  if (typeof content !== 'string') errors.push('Content missing or not a string')
+  if (typeof title !== 'string') errors.push('Title missing or not a string')
+  if (typeof createdAt !== 'string') errors.push('Created Date missing or not a string')
+  if (typeof userId !== 'number') errors.push('UserId missing or not a number')
+  if (typeof subredditId !== 'number') errors.push('SubredditId missing or not a number')
+
+  if (errors.length === 0) {
+      const result = createPost.run(content, title, createdAt, userId, subredditId)
+
+      const newPost = getPostById.run(result.lastInsertRowid)
+
+      res.send(newPost)
   }
   else {
       res.status(400).send({ error: errors })
