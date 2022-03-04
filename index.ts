@@ -26,9 +26,53 @@ const createPostLikes = db.prepare(`
   INSERT INTO postslikes (userId, postId) VALUES (?, ?)
 `);
 
-const getUserByUsername = db.prepare(`
-  SELECT * FROM users WHERE name=?
+const getUserByEmail = db.prepare(`
+  SELECT * FROM users WHERE email=?
 `);
+
+const getUserById = db.prepare(`
+SELECT * FROM users WHERE id=?;
+`)
+
+
+app.post('/sign-in', (req, res) => {
+  const { email, password } = req.body;
+  const user = getUserByEmail.get(email);
+
+  if (user) {
+    if (password == user.password) {
+      const id = user.id;
+      res.send({ user: { id, email } });
+    } else {
+      res.status(401).send({ error: 'Password is incorrect!' });
+    }
+  } else {
+    res.status(404).send({ error: 'Email does not exist!' });
+  }
+});
+
+app.post('/users', (req, res) => {
+  const { name, email, password, displayName } = req.body
+
+  let errors = []
+
+  if (typeof name !== 'string') errors.push('Username missing or not a string')
+  if (typeof email !== 'string') errors.push('Email missing or not a string')
+  if (typeof password !== 'string') errors.push('Password missing or not a string')
+  if (typeof displayName !== 'string') errors.push('DisplayName missing or not a string')
+
+
+
+  if (errors.length === 0) {
+      const result = createUser.run(name, email, password, displayName)
+
+      const newUser = getUserById.run(result.lastInsertRowid)
+      res.send(newUser)
+  }
+  else {
+      res.status(400).send({ error: errors })
+  }
+})
 
 
 
